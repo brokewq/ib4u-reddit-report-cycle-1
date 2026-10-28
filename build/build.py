@@ -63,10 +63,6 @@ for k in KW:
 
 # ---------- numbers ----------
 views = sum(p["views"] for p in NEW)
-uk_ps = [p for p in NEW if p["uk"] is not None]
-uk_views = sum(p["views"] * p["uk"] / 100 for p in uk_ps)
-uk_share = uk_views / sum(p["views"] for p in uk_ps)
-uk_all = int(uk_views / views * 100)  # all views, counting threads with no UK share as zero UK; rounded down
 n_rank = len(KW)
 n_unique = len({k[1] for k in KW})
 n_first = sum(1 for k in KW if k[5] == 1)
@@ -90,10 +86,6 @@ pos_share = SENTIMENT["pos"] / SENTIMENT["total"]
 assert n_comments == 18 and n_posts == 9, (n_comments, n_posts)
 
 VIEWS_LABEL = f"{views / 1000:.1f}K"
-
-
-def fmt_v(v):
-    return f"{v / 1e6:.2f}M" if v >= 1e6 else f"{round(v / 1000):,}K"
 
 
 def wbr(sub):
@@ -141,7 +133,7 @@ hero = f'''
     </div>
     <div class="herostats">
       <div><b>{n_brand}</b><span>Brand-name searches</span><em>that now show our threads</em></div>
-      <div><b>{VIEWS_LABEL}</b><span>Views on Reddit</span><em>{uk_all:.0f}%+ from the UK</em></div>
+      <div><b>{VIEWS_LABEL}</b><span>Views on Reddit</span><em>across {n_posts} threads</em></div>
       <div><b>{n_comments}</b><span>Branded comments</span><em>in {n_subs} communities</em></div>
       <div><b>{n_posts}</b><span>Posts live</span><em>{len(set(THEME_OF[p["id"]] for p in NEW))} themes</em></div>
     </div>
@@ -167,14 +159,6 @@ for p in ranked:
                    f'<strong>{e(p["title"]).replace(" ?", "&nbsp;?")}</strong>'
                    f'<span class="pod-stats"><span><b>{p["vlabel"]}</b> views</span><span><b>{len(kw_by[p["id"]])}</b> Google rankings</span></span></a>')
 
-local = [p for p in uk_ps if p["sub"] != "r/Invisalign"]
-uk_floor = int(min(p["uk"] for p in local))  # round down so "at least" stays true
-big_uk = max(uk_ps, key=lambda p: p["views"] * p["uk"])
-uk_facts = (
-    f'<div class="usf"><b>{uk_all:.0f}%+</b><span><strong>Over {uk_all:.0f}% of all views came from the UK.</strong> Across all {n_posts} threads, at least {uk_all:.0f}% of the {VIEWS_LABEL} views were from UK readers.</span></div>'
-    f'<div class="usf"><b>{uk_floor}%+</b><span><strong>UK communities stay local.</strong> On {", ".join(p["sub"] for p in local[:-1])} and {local[-1]["sub"]}, at least {uk_floor}% of views came from the UK.</span></div>'
-    f'<div class="usf"><b>≈{fmt_v(big_uk["views"] * big_uk["uk"] / 100)}</b><span><strong>UK views on one thread alone.</strong> “{e(short(big_uk["id"]))}” reached {big_uk["vlabel"]} views, {big_uk["uk"]:.0f}% of them in the UK.</span></div>'
-)
 
 BR_SHOW = []
 for k in BR:  # one cell per brand search, best placement first
@@ -263,19 +247,6 @@ glance = f'''
       <div class="podium">{rank_cells}</div>
     </div>
 
-    <div class="chartcard wide split">
-      <div class="split-l">
-        <div class="eyebrow">Who saw it</div>
-        <div class="chart-title">The UK is {CLIENT}'s audience here</div>
-        <div class="bigs">
-          <div><b class="acc">{uk_share:.0%}</b><span>of views from the UK</span></div>
-          <div><b>≈{fmt_v(uk_views)}</b><span>UK views</span></div>
-        </div>
-        <p class="cardnote">UK share of each thread's views, from Reddit Post Insights, across the {len(uk_ps)} threads whose insights show it.</p>
-      </div>
-      <div class="split-r">{uk_facts}</div>
-    </div>
-
     <div class="fp one">
       <div class="fp-col"><div class="fp-head"><div><div class="eyebrow">Subreddit footprint</div><div class="chart-title">{n_posts + n_comments} placements in {n_subs} communities</div></div>
         <div class="legend"><span><i class="dot a"></i>Posts</span><span><i class="dot n"></i>Branded comments</span></div></div>{fp_rows}</div>
@@ -302,7 +273,7 @@ sentiment = f'''
         <div><div class="eyebrow">Share of voice</div><div class="chart-title">r/Invisalign carries {SOV[0][1] / S["total"]:.0%} of the conversation</div></div>
         <div><div class="sov-strip">{sov_strip}</div><div class="sov-leg">{sov_leg}</div></div>
       </div>
-      <p class="cardnote">Mentions by subreddit, from the same {S["total"]} posts and comments. r/Invisalign is the main forum for aligner patients in the UK and beyond, and where most of this cycle's posts went live.</p>
+      <p class="cardnote">Mentions by subreddit, from the same {S["total"]} posts and comments. r/Invisalign is the main forum for aligner patients, and where most of this cycle's posts went live.</p>
     </div>
   </section>
 </div>
@@ -380,7 +351,7 @@ for p in ORDER:
     stats = (f'<div class="pstat"><b>{p["vlabel"]}</b><span>Views</span></div>'
              f'<div class="pstat"><b>{len(ks)}</b><span>Keywords ranking</span></div>'
              + (f'<div class="pstat"><b>{n1}</b><span>At #1 on Google</span></div>' if n1 else "")
-             + (f'<div class="pstat"><b>{p["uk"]:.0f}%</b><span>UK audience</span></div>' if p["uk"] is not None else ""))
+             )
     iw, ih = Image.open(ROOT / "ins" / f'{p["ins"]}.webp').size
     wide = " wide" if iw / ih > 0.6 else ""
     cards += f'''
@@ -459,7 +430,7 @@ ahead = f'''
 footer = f'''
 <footer id="method"><div class="m81card"><div class="m81-watermark">M81 MEDIA</div><div class="m81card-inner">
   <div class="m81-lock"><img src="m81-logo.png" alt="M81"><span class="bname">M81</span></div>
-  <div class="m81-method"><p class="fineprint"><strong>Method.</strong> Each ranking was captured from a live google.co.uk results page, searched from London, between 25 and 26 Oct 2026. The dark panel on the right of every screenshot is the raw data for that search. A keyword counts as ranking when our own thread appears on the first page as its own result, and it is counted once for each of our threads that appears ({n_rank} rankings, {n_unique} distinct searches). Every screenshot was checked by hand: captures where our thread only appeared as a sub-link under someone else's result, or where the capture could not confirm our thread, were removed, along with searches that only restate a post title. Views, subreddit rank and audience come from each thread's Reddit Post Insights at the time of capture. Sentiment and share of voice come from our brand monitoring of Reddit since 27 Sep 2026. Rankings shift by location, device and date, so each capture is a snapshot from the day it was run.</p>
+  <div class="m81-method"><p class="fineprint"><strong>Method.</strong> Each ranking was captured from a live google.co.uk results page, searched from London, between 25 and 26 Oct 2026. The dark panel on the right of every screenshot is the raw data for that search. A keyword counts as ranking when our own thread appears on the first page as its own result, and it is counted once for each of our threads that appears ({n_rank} rankings, {n_unique} distinct searches). Every screenshot was checked by hand: captures where our thread only appeared as a sub-link under someone else's result, or where the capture could not confirm our thread, were removed, along with searches that only restate a post title. Views and subreddit rank come from each thread's Reddit Post Insights at the time of capture. Sentiment and share of voice come from our brand monitoring of Reddit since 27 Sep 2026. Rankings shift by location, device and date, so each capture is a snapshot from the day it was run.</p>
   <div class="src"><span>Search engine: Google UK</span><span>Location: London</span><span>Device: Desktop</span><span>Captured: 25 Oct 2026</span><span>Period: 27 Sep to 27 Oct 2026</span></div></div>
 </div></div></footer>
 '''
@@ -474,6 +445,6 @@ html = f'''<!doctype html>
 <style>{css}</style></head><body>
 {hero}{glance}{sentiment}{own}{posts_html}{comments}{ahead}{footer}{lightbox}</body></html>'''
 (ROOT / "index.html").write_text(html)
-print(f"views {views:,}  uk {uk_share:.1%}  rankings {n_rank}  unique {n_unique}  #1 {n_first}  brand {n_brand} (#1 {n_brand1})  surf {dict(surf)}  subs {n_subs}")
+print(f"views {views:,}  rankings {n_rank}  unique {n_unique}  #1 {n_first}  brand {n_brand} (#1 {n_brand1})  surf {dict(surf)}  subs {n_subs}")
 if not NOTION_BOARD:
     print("NOTE: data.NOTION_BOARD is not set, so the Looking ahead Notion button is hidden.")
