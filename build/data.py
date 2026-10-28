@@ -195,4 +195,4 @@ INTENT = {
 }
 
 # Client-facing Notion content board for next cycle's posts. The "Looking ahead" button only shows once this is set.
-NOTION_BOARD = None
+NOTION_BOARD = "https://golden-chipmunk-144.notion.site/M81-x-Invisiblebraces4u-Reddit-Content-Board-3dfa97d36fac8082b53fe2ea3179d405?pvs=73"
