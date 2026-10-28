@@ -54,8 +54,9 @@ KW.sort(key=lambda r: (-INTENT[r[1]], r[5] != 1, r[1]))  # highest intent first;
 
 NEW = sorted(POSTS, key=lambda p: -p["views"])
 P = {p["id"]: p for p in POSTS}
-NUM = {p["id"]: i for i, p in enumerate(NEW, 1)}
 kw_by = {p["id"]: [k for k in KW if k[0] == p["id"]] for p in NEW}
+ORDER = sorted(NEW, key=lambda p: (-len(kw_by[p["id"]]), -p["views"]))  # post cards: most keywords first
+NUM = {p["id"]: i for i, p in enumerate(ORDER, 1)}
 kw_posts = {}
 for k in KW:
     kw_posts.setdefault(k[1], []).append(k[0])
@@ -345,7 +346,7 @@ own = f'''
 # ---------- posts ----------
 kmax = max(len(v) for v in kw_by.values())
 cov = ""
-for p in sorted(NEW, key=lambda p: (-len(kw_by[p["id"]]), -p["views"])):
+for p in ORDER:
     n = len(kw_by[p["id"]])
     cov += (f'<a class="cov-row" href="#{p["id"]}"><span class="cov-t">{e(p["title"])}<em>{p["sub"]} · {p["vlabel"]} views</em></span>'
             f'<span class="cov-bar"><i style="width:{n / kmax * 100:.0f}%"></i></span><span class="cov-n">{n}</span></a>')
@@ -368,7 +369,7 @@ def ledger(pid):
 
 
 cards = ""
-for p in NEW:
+for p in ORDER:
     name, col = THEMES[THEME_OF[p["id"]]]
     ks = kw_by[p["id"]]
     n1 = sum(1 for k in ks if k[5] == 1)
