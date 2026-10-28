@@ -1,0 +1,34 @@
+<div class="lb" id="lb" hidden><button class="lb-x" aria-label="Close">Close</button><button class="lb-prev" aria-label="Previous">Prev</button><button class="lb-next" aria-label="Next">Next</button>
+<figure><figcaption><span id="lb-pl"></span><b id="lb-kw"></b><em id="lb-ct"></em></figcaption><div class="lb-stage"><span class="lb-msg lb-wait">Loading capture</span><span class="lb-msg lb-fail">This capture did not load. Refresh the page and try again.</span><img id="lb-img" alt=""></div></figure></div>
+<script>(function () {
+  var tiles = Array.prototype.slice.call(document.querySelectorAll('a[data-kw]'));
+  var lb = document.getElementById('lb'), img = document.getElementById('lb-img');
+  var kw = document.getElementById('lb-kw'), pl = document.getElementById('lb-pl'), ct = document.getElementById('lb-ct');
+  var cur = 0;
+  function show(i) {
+    cur = (i + tiles.length) % tiles.length;
+    var t = tiles[cur], src = t.getAttribute('href');
+    lb.classList.add('loading'); lb.classList.remove('failed');
+    lb.classList.toggle('tall', /^ins\//.test(src));
+    img.onload = function () { lb.classList.remove('loading'); };
+    img.onerror = function () { if (img.getAttribute('src')) { lb.classList.remove('loading'); lb.classList.add('failed'); } };
+    img.src = src;
+    var nx = tiles[(cur + 1) % tiles.length]; if (nx) { new Image().src = nx.getAttribute('href'); }
+    img.alt = t.dataset.kw;
+    kw.textContent = t.dataset.kw; pl.textContent = t.dataset.pl;
+    ct.textContent = (cur + 1) + ' / ' + tiles.length;
+    lb.hidden = false; document.body.style.overflow = 'hidden';
+  }
+  function close() { lb.hidden = true; img.removeAttribute('src'); document.body.style.overflow = ''; }
+  tiles.forEach(function (t, i) { t.addEventListener('click', function (ev) { ev.preventDefault(); show(i); }); });
+  lb.querySelector('.lb-x').addEventListener('click', close);
+  lb.querySelector('.lb-prev').addEventListener('click', function () { show(cur - 1); });
+  lb.querySelector('.lb-next').addEventListener('click', function () { show(cur + 1); });
+  lb.addEventListener('click', function (ev) { if (ev.target === lb) close(); });
+  document.addEventListener('keydown', function (ev) {
+    if (lb.hidden) return;
+    if (ev.key === 'Escape') close();
+    if (ev.key === 'ArrowLeft') show(cur - 1);
+    if (ev.key === 'ArrowRight') show(cur + 1);
+  });
+})();</script>
